@@ -1,0 +1,142 @@
+LAMMPS (16 Feb 2016)
+
+# ------------------------ INITIALIZATION ----------------------------
+##    metal : [m] = g/mol, [x] = A,    [E]=eV, [q]=e, [T]=K, [t]=ps, [P]=bars=1e5Pa
+units 		metal
+dimension	3
+boundary    p p p
+atom_style	atomic
+#variable latparam equal 3.61 #4.05
+
+# ----------------------- ATOM DEFINITION ----------------------------
+
+read_data   Ni25.lmp
+  orthogonal box = (0 0 0) to (87.9525 87.9525 87.9525)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  62500 atoms
+group	Ni type 1
+62500 atoms in group Ni
+
+# ------------------------ FORCE FIELDS ------------------------------
+
+pair_style	eam/fs #alloy
+pair_coeff	* * Nickel_pot.txt Ni
+
+# ------------------------- SETTINGS ---------------------------------
+compute csym all centro/atom fcc
+compute peratom all pe/atom
+
+
+compute eng all pe/atom                          #c_eng : Epot/atom for each atom
+compute eatomsav all reduce ave c_eng
+#----------------- Thermo output ---------------------
+thermo          10
+thermo_style    custom step cpu pe ke fnorm temp lx ly lz press c_eatomsav
+
+variable          Pressure  equal 0.1*press #change the unit from bar to MPa
+
+#change_box all z delta 0 10
+
+#thomas
+#----------------- Simulation 1: Minimization + Relaxation ---------
+## Relaxation parameters
+## Min_style : sd = steepest descent, cg = conjugate gradients
+min_style         cg
+min_modify line   quadratic
+#Minimization : etol    ftol   maxiter   maxeval
+minimize          0   1e-7    10000      100000
+WARNING: Resetting reneighboring criteria during minimization (../min.cpp:168)
+Neighbor list info ...
+  2 neighbor list requests
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 8
+  ghost atom cutoff = 8
+  binsize = 4 -> bins = 22 22 22
+Memory usage per processor = 26.8598 Mbytes
+Step CPU PotEng KinEng Fnorm Temp Lx Ly Lz Press eatomsav 
+       0            0    -274094.3            0 1.0012146e-11            0      87.9525      87.9525      87.9525    32.509331   -4.3855088 
+       1   0.80674791    -274094.3            0 1.000301e-11            0      87.9525      87.9525      87.9525    32.509331   -4.3855088 
+Loop time of 0.806973 on 1 procs for 1 steps with 62500 atoms
+
+98.9% CPU use with 1 MPI tasks x no OpenMP threads
+
+Minimization stats:
+  Stopping criterion = force tolerance
+  Energy initial, next-to-last, final = 
+        -274094.297968     -274094.297968     -274094.297968
+  Force two-norm initial, final = 1.00121e-11 1.0003e-11
+  Force max component initial, final = 6.47572e-14 6.47572e-14
+  Final line search alpha, max atom move = 1 6.47572e-14
+  Iterations, force evaluations = 1 2
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.79869    | 0.79869    | 0.79869    |   0.0 | 98.97
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.0012851  | 0.0012851  | 0.0012851  |   0.0 |  0.16
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 0.007      |            |       |  0.87
+
+Nlocal:    62500 ave 62500 max 62500 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    40190 ave 40190 max 40190 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    6.25e+06 ave 6.25e+06 max 6.25e+06 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:  0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 6250000
+Ave neighs/atom = 100
+Neighbor list builds = 0
+Dangerous builds = 0
+
+fix               1 all box/relax iso  0.0
+min_style         cg
+min_modify line   quadratic
+minimize          0   1e-4    10000     100000
+WARNING: Resetting reneighboring criteria during minimization (../min.cpp:168)
+Memory usage per processor = 27.7348 Mbytes
+Step CPU PotEng KinEng Fnorm Temp Lx Ly Lz Press eatomsav 
+       1            0    -274094.3            0 1.0011435e-11            0      87.9525      87.9525      87.9525    32.509331   -4.3855088 
+       4    6.9101548    -274094.3            0 1.6285431e-11            0    87.953027    87.953027    87.953027  0.064756529   -4.3855088 
+Loop time of 6.91034 on 1 procs for 3 steps with 62500 atoms
+
+99.8% CPU use with 1 MPI tasks x no OpenMP threads
+
+Minimization stats:
+  Stopping criterion = linesearch alpha is zero
+  Energy initial, next-to-last, final = 
+        -274094.297968     -274094.298129     -274094.298129
+  Force two-norm initial, final = 41.4156 0.0824982
+  Force max component initial, final = 41.4156 0.0824982
+  Final line search alpha, max atom move = 1.18374e-06 9.76563e-08
+  Iterations, force evaluations = 3 26
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 6.8133     | 6.8133     | 6.8133     |   0.0 | 98.60
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.0091865  | 0.0091865  | 0.0091865  |   0.0 |  0.13
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 0.08784    |            |       |  1.27
+
+Nlocal:    62500 ave 62500 max 62500 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    40190 ave 40190 max 40190 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    6.25e+06 ave 6.25e+06 max 6.25e+06 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:  0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 6250000
+Ave neighs/atom = 100
+Neighbor list builds = 0
+Dangerous builds = 0

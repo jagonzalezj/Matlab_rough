@@ -1,0 +1,227 @@
+LAMMPS (23 Oct 2017)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (../comm.cpp:90)
+  using 1 OpenMP thread(s) per MPI task
+##############################################################
+### Computation of Ni bulk modulus ###########################
+##############################################################
+
+#------------------- Initialization --------------
+##Select your units
+## electron : [m] = amu,   [x] = Bohr, [E]=H,  [q]=e, [T]=K, [t]=fs
+##    metal : [m] = g/mol, [x] = A,    [E]=eV, [q]=e, [T]=K, [t]=ps, [P]=bars=1e5Pa
+##       si : [m] = kg,    [x] = m,    [E]=J,  [q]=C, [T]=K, [t]=s
+units 	metal
+dimension 3
+boundary p p p
+
+## Choose your atom_style
+atom_style atomic
+
+
+#-------------------- Atom definition -----------------
+## Read box dimensions and atomic positions from file
+## Or create it using lammps scripting itself
+read_data   nikel-small.lmp
+  orthogonal box = (0 0 0) to (17.62 17.62 17.62)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  500 atoms
+#
+#changed
+#lattice fcc 3.55
+#region whole block 0 5 0 5 0 5 units lattice
+#create_box	1	whole
+#create_atoms	1	region	whole
+
+
+## Atoms/ions properties
+group	Ni type 1
+500 atoms in group Ni
+
+
+#-------------------- Settings --------------------------
+#--------- Interatomic potential parameters -------------
+pair_style	eam/fs #alloy
+pair_coeff	* * Nickel_pot.txt Ni
+
+
+#----------------- Compute ----------------------
+compute eng all pe/atom                          #c_eng : Epot/atom for each atom
+compute eatomsav all reduce ave c_eng            #c_eatomsav : <Epot/atom>
+
+#----------------- Thermo output ---------------------
+thermo          10
+thermo_style    custom step cpu pe ke fnorm temp lx ly lz press c_eatomsav
+
+variable          Pressure  equal 0.1*press #change the unit from bar to MPa
+
+print             "# Vol_peratom (A^3)    E_peratom (eV)    Latt_param (A)    Fnorm (eV/A)    Pressure (MPa)" file Data_out.dat
+# Vol_peratom (A^3)    E_peratom (eV)    Latt_param (A)    Fnorm (eV/A)    Pressure (MPa)
+
+#----------------- Simulation 1: Minimization + Relaxation ---------
+# Relaxation parameters
+# Min_style : sd = steepest descent, cg = conjugate gradients
+min_style         cg
+min_modify line   quadratic
+#Minimization : etol    ftol   maxiter   maxeval
+minimize          0   1e-7    10000     100000
+WARNING: Using 'neigh_modify every 1 delay 0 check yes' setting during minimization (../min.cpp:168)
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 8
+  ghost atom cutoff = 8
+  binsize = 4, bins = 5 5 5
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair eam/fs, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d/newton
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 4.33 | 4.33 | 4.33 Mbytes
+Step CPU PotEng KinEng Fnorm Temp Lx Ly Lz Press c_eatomsav 
+       0            0   -2192.6777            0 1.1353377e-13            0        17.62        17.62        17.62   -8949.6042   -4.3853554 
+       1 0.0060739517   -2192.6777            0 1.1869451e-13            0        17.62        17.62        17.62   -8949.6042   -4.3853554 
+Loop time of 0.00608993 on 1 procs for 1 steps with 500 atoms
+
+65.7% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+Minimization stats:
+  Stopping criterion = force tolerance
+  Energy initial, next-to-last, final = 
+        -2192.67767565     -2192.67767565     -2192.67767565
+  Force two-norm initial, final = 1.13534e-13 1.18695e-13
+  Force max component initial, final = 7.04992e-15 7.06228e-15
+  Final line search alpha, max atom move = 1 7.06228e-15
+  Iterations, force evaluations = 1 2
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.0059516  | 0.0059516  | 0.0059516  |   0.0 | 97.73
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 4.7207e-05 | 4.7207e-05 | 4.7207e-05 |   0.0 |  0.78
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 9.108e-05  |            |       |  1.50
+
+Nlocal:    500 ave 500 max 500 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    2930 ave 2930 max 2930 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    50000 ave 50000 max 50000 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 50000
+Ave neighs/atom = 100
+Neighbor list builds = 0
+Dangerous builds = 0
+
+fix               1 all box/relax iso 0.0
+min_style         cg
+min_modify line   quadratic
+minimize          0   1e-4    10000     100000
+WARNING: Using 'neigh_modify every 1 delay 0 check yes' setting during minimization (../min.cpp:168)
+Per MPI rank memory allocation (min/avg/max) = 4.455 | 4.455 | 4.455 Mbytes
+Step CPU PotEng KinEng Fnorm Temp Lx Ly Lz Press c_eatomsav 
+       1            0   -2192.6777            0 1.1353377e-13            0        17.62        17.62        17.62   -8949.6042   -4.3853554 
+      10  0.027057171   -2192.7381            0 4.1108523e-13            0    17.604142    17.604142    17.604142    -4149.874   -4.3854761 
+      19  0.048028946   -2192.7544            0 7.6583213e-13            0    17.590606    17.590606    17.590606 -8.3873197e-06   -4.3855088 
+Loop time of 0.0480611 on 1 procs for 18 steps with 500 atoms
+
+99.9% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+Minimization stats:
+  Stopping criterion = force tolerance
+  Energy initial, next-to-last, final = 
+        -2192.67767565     -2192.75438478     -2192.75438479
+  Force two-norm initial, final = 91.6711 8.56252e-08
+  Force max component initial, final = 91.6711 8.56252e-08
+  Final line search alpha, max atom move = 0.301803 2.58419e-08
+  Iterations, force evaluations = 18 20
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.045086   | 0.045086   | 0.045086   |   0.0 | 93.81
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.00062609 | 0.00062609 | 0.00062609 |   0.0 |  1.30
+Output  | 9.2983e-05 | 9.2983e-05 | 9.2983e-05 |   0.0 |  0.19
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 0.002256   |            |       |  4.69
+
+Nlocal:    500 ave 500 max 500 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    2930 ave 2930 max 2930 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    50000 ave 50000 max 50000 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 50000
+Ave neighs/atom = 100
+Neighbor list builds = 0
+Dangerous builds = 0
+unfix             1
+
+variable          vol_peratom equal vol/atoms
+variable          E_peratom equal pe/atoms
+variable          latt_param equal lx/5          # WARNING
+variable          forcenorm equal fnorm
+
+print             "${vol_peratom}  ${E_peratom}  ${latt_param} ${forcenorm} ${Pressure}" append Data_out.dat
+10.8861012295918  -4.38550876957106  3.51812111651103 7.65832129436319e-13 -8.38731969085023e-07
+
+   #MODIFY
+#----------------- Simulation 2 : Rescale to max size -------------------
+# Here we start from an arbitrary box, relax it to the
+# equilibrium config and then expand it before compression. Like that we are
+# always caclculating around the equilibrium position (the parabola is always centered).
+
+variable          def equal 1.5e-3     # delt_eps/(2*k) * nb_unit_cell
+variable          kmid equal 25        # kmid is the middle value of k
+variable          definit equal ${kmid}*${def}
+variable          definit equal 25*${def}
+variable          definit equal 25*0.0015
+
+fix               deformation1 all deform 1 x delta -${definit} ${definit} y delta -${definit} ${definit} z delta -${definit} ${definit} remap x units box
+fix               deformation1 all deform 1 x delta -0.0375 ${definit} y delta -${definit} ${definit} z delta -${definit} ${definit} remap x units box
+fix               deformation1 all deform 1 x delta -0.0375 0.0375 y delta -${definit} ${definit} z delta -${definit} ${definit} remap x units box
+fix               deformation1 all deform 1 x delta -0.0375 0.0375 y delta -0.0375 ${definit} z delta -${definit} ${definit} remap x units box
+fix               deformation1 all deform 1 x delta -0.0375 0.0375 y delta -0.0375 0.0375 z delta -${definit} ${definit} remap x units box
+fix               deformation1 all deform 1 x delta -0.0375 0.0375 y delta -0.0375 0.0375 z delta -0.0375 ${definit} remap x units box
+fix               deformation1 all deform 1 x delta -0.0375 0.0375 y delta -0.0375 0.0375 z delta -0.0375 0.0375 remap x units box
+run               1
+Per MPI rank memory allocation (min/avg/max) = 3.33 | 3.33 | 3.33 Mbytes
+Step CPU PotEng KinEng Fnorm Temp Lx Ly Lz Press c_eatomsav 
+      19            0   -2192.7544            0 7.6190752e-13            0    17.590606    17.590606    17.590606 -8.3873131e-06   -4.3855088 
+      20 0.0016620159   -2192.7544            0 7.6190752e-13            0    17.665606    17.665606    17.665606 -8.28094e-06   -4.3855088 
+Loop time of 0.00167489 on 1 procs for 1 steps with 500 atoms
+
+Performance: 51.585 ns/day, 0.465 hours/ns, 597.054 timesteps/s
+0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.001621   | 0.001621   | 0.001621   |   0.0 | 96.78
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 1.5974e-05 | 1.5974e-05 | 1.5974e-05 |   0.0 |  0.95
+Output  | 2.5988e-05 | 2.5988e-05 | 2.5988e-05 |   0.0 |  1.55
+Modify  | 7.1526e-06 | 7.1526e-06 | 7.1526e-06 |   0.0 |  0.43
+Other   |            | 4.768e-06  |            |       |  0.28
+
+Nlocal:    500 ave 500 max 500 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    2930 ave 2930 max 2930 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    50000 ave 50000 max 50000 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 50000
+Ave neighs/atom = 100
+Neighbor list builds = 0
+Dangerous builds = 0
+unfix             deformation1
+
+#----------------- Simulation 3 : loop -> Compress + calculate nrj ----------------------------
+quit

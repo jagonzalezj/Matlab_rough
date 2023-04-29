@@ -1,0 +1,33 @@
+ax(1)=subplot(4,1,1);
+imagesc(magic(5),[1 64])
+ax(2)=subplot(4,1,2);
+imagesc(magic(6),[1 64])
+ax(3)=subplot(4,1,3);
+imagesc(magic(7),[1 64])
+ax(4)=subplot(4,1,4);
+imagesc(magic(8),[1 64])
+h=colorbar;
+set(h, 'Position', [.8314 .11 .0581 .8150])
+for i=1:4
+      pos=get(ax(i), 'Position');
+      set(ax(i), 'Position', [pos(1) pos(2) 0.85*pos(3) pos(4)]);
+end
+
+%%%%%%%%%%%%%%%%
+
+clim=[-1 2]; % Data range...
+
+figure; hold on; axis off;
+ax(1)=axes('position',[0.05 0.55 0.35 0.40]);
+  imagesc(rand(5,5)-1);
+ax(2)=axes('position',[0.05 0.05 0.35 0.40]);
+  imagesc(rand(6,6));
+ax(3)=axes('position',[0.45 0.55 0.35 0.40]);
+  imagesc(rand(7,7));
+ax(4)=axes('position',[0.45 0.05 0.35 0.40]);
+  imagesc(2*rand(8,8));
+
+caxis(clim);
+set(ax,'CLim',clim);
+h=colorbar;
+  set(h,'position',[0.85 0.05 0.05 0.90])

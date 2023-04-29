@@ -1,0 +1,52 @@
+clc
+close all
+clear all
+
+A=load('Nickel.txt');
+z=load('z.txt');
+x=load('x.txt');
+y=load('y.txt');
+
+tama=size(A);
+
+repeatedx=unique(A(:,1)); dx=repeatedx(2);         % The second element of repeated is the Delta dx dy dz
+repeatedy=unique(A(:,2)); dy=repeatedy(2);
+repeatedz=unique(A(:,3)); dz=repeatedz(2);
+
+nlay=ceil((max(z(:))-min(z(:)))/dz)+1;    % number of layers involved
+
+A=[A (1:tama(1))'];           % Add Count in last column
+D=sortrows(A,3);             % Organize by planes respect to z
+D=fliplr(D')';                 % Invert the order of the matrix
+
+l=0;
+colla=[];
+while D(tama(1)-l,3) > min(z(:))-(2*dz)
+    posx=D(tama(1)-l,1);
+    posy=D(tama(1)-l,2);
+    simx=find(x==posx);
+    simy=find(y==posy);
+    zcomp=z(simy,simx);
+    if zcomp < D(tama(1)-l,3)
+        D(tama(1)-l,:)=[0];
+    end
+    l=l+1;
+end
+
+
+
+%removing Zero positions
+D(all(D==0,2),:) = [];
+[fil, col]=size(D)
+
+plot3(D(:,1),D(:,2),D(:,3),'ko','MarkerFaceColor',[0.5 0.5 0.5],'MarkerSize',5)
+ hold on
+ surf(xx,yy,z,'edgecolor','none','facecolor','interp'); hold on;
+
+%D=sortrows(D,4);             % Organize by planes respect to z
+
+fid = fopen('out.cfg','w');
+for i=1:fil
+    fprintf(fid,'%10.8f    %10.8f    %10.8f \n',D(i,1),D(i,2),D(i,3));
+end
+fclose(fid)

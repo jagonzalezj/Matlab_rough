@@ -1,0 +1,46 @@
+print "toto"
+
+
+# initiqlization
+
+units        lj
+dimension    3
+atom_style   atomic
+timestep     0.005
+
+variable     lat equal 1.4124
+variable     L equal 10*${lat}
+variable     L2 equal ${L}/2
+variable     Lup equal ${L2}+2.0
+variable     Ldown equal ${L2}-2.0
+variable	 T equal 1.0
+variable     P equal 0.01
+
+lattice      fcc ${lat}
+region       my_box block 0.0 ${L} 0.0 ${L} 0.0 ${L} units box
+create_box   3 my_box
+create_atoms 1 box
+mass         * 1.0
+
+region		 solide block INF INF INF INF ${Ldown} ${Lup}  units box
+group 		 sol region solide
+set			 group sol type 2
+
+region		 spot cylinder z ${L2} ${L2} 3.0 ${Ldown} ${Lup}  units box
+group 		 spot region spot
+set			 group spot type 3
+
+#  potential
+pair_style	 lj/cut 2.5
+pair_coeff	 * * 1.0 1.0 2.5 # atomttype1 atomttype2 epsilon sigma cutoff 
+pair_coeff	 2 2 10.0 1.0 2.5
+pair_coeff	 1 3 0.5 1.0 2.5
+pair_coeff	 2 3 10.0 1.0 2.5
+pair_coeff	 3 3 10.0 1.0 2.5
+
+# integration
+fix			 NPT all npt temp ${T} ${T} 1.0 iso ${P} ${P} 1.0 
+
+thermo 		10
+thermo_style	custom step etotal press temp 
+run 		1000
